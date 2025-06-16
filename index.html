@@ -15,7 +15,7 @@
                     <div class="status-indicator"></div>
                     <span id="syncStatusText">Inicializuji...</span>
                 </div>
-                <button class="btn btn-primary" onclick="dataManager.loadData()">🔄 Načíst data</button>
+                <button class="btn btn-primary" onclick="window.dataManager && dataManager.loadData()">🔄 Načíst data</button>
             </div>
         </div>
         
@@ -49,7 +49,7 @@
                     <div class="form-group">
                         <label for="eventName">Název akce</label>
                         <input type="text" id="eventName" placeholder="např. Burger Fest Praha" 
-                               oninput="autocomplete.handleEventNameInput()" autocomplete="off">
+                              oninput="window.autocomplete && autocomplete.handleEventNameInput()" autocomplete="off">
                         <div class="input-hint">Začněte psát pro zobrazení našeptávače z historických akcí</div>
                     </div>
                     
@@ -57,7 +57,7 @@
                         <div class="form-group">
                             <label for="eventLocation">Město/Lokalita</label>
                             <input type="text" id="eventLocation" placeholder="např. Praha, Brno, Ostrava..." 
-                                   oninput="autocomplete.handleLocationInput()" autocomplete="off">
+                                  oninput="window.autocomplete && autocomplete.handleLocationInput()"
                             <div class="input-hint">Automatické našeptávání měst</div>
                         </div>
                         <div class="form-group">
