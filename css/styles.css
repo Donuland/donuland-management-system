@@ -1,0 +1,540 @@
+/* =============================================================================
+   DONULAND MANAGEMENT SYSTEM - CSS STYLES
+   ============================================================================= */
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    min-height: 100vh; 
+}
+
+.container { 
+    max-width: 1400px; 
+    margin: 0 auto; 
+    background: white; 
+    min-height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.header { 
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4); 
+    padding: 20px 30px; 
+    color: white; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+}
+
+.header h1 { 
+    font-size: 2em; 
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3); 
+}
+
+.header-controls { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+}
+
+.sync-status { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    background: rgba(255,255,255,0.2); 
+    padding: 8px 15px; 
+    border-radius: 20px; 
+    backdrop-filter: blur(10px); 
+    font-size: 0.9em; 
+}
+
+.status-indicator { 
+    width: 12px; 
+    height: 12px; 
+    border-radius: 50%; 
+    background: #f39c12; 
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.nav-tabs { 
+    display: flex; 
+    background: #f8f9fa; 
+    border-bottom: 1px solid #e9ecef; 
+    padding: 0 30px; 
+    overflow-x: auto; 
+}
+
+.nav-tab { 
+    padding: 15px 25px; 
+    cursor: pointer; 
+    border-bottom: 3px solid transparent; 
+    transition: all 0.3s ease; 
+    font-weight: 600; 
+    color: #6c757d; 
+    white-space: nowrap; 
+}
+
+.nav-tab:hover { 
+    background: #e9ecef; 
+    color: #495057; 
+}
+
+.nav-tab.active { 
+    color: #3498db; 
+    border-bottom-color: #3498db; 
+    background: white; 
+}
+
+.content-area { 
+    flex: 1; 
+    padding: 30px; 
+    overflow-y: auto; 
+}
+
+.tab-content { 
+    display: none; 
+}
+
+.tab-content.active { 
+    display: block; 
+}
+
+.form-section { 
+    background: #f8f9fa; 
+    padding: 25px; 
+    border-radius: 10px; 
+    border-left: 4px solid #3498db; 
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.form-section h3 { 
+    color: #2c3e50; 
+    margin-bottom: 20px; 
+    font-size: 1.3em; 
+}
+
+.form-group { 
+    margin-bottom: 20px; 
+    position: relative; 
+}
+
+.form-group label { 
+    display: block; 
+    font-weight: 600; 
+    color: #34495e; 
+    margin-bottom: 8px; 
+}
+
+.form-group input, .form-group select { 
+    width: 100%; 
+    padding: 12px 15px; 
+    border: 2px solid #ddd; 
+    border-radius: 8px; 
+    font-size: 1em; 
+    transition: border-color 0.3s ease; 
+}
+
+.form-group input:focus, .form-group select:focus { 
+    outline: none; 
+    border-color: #3498db; 
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); 
+}
+
+.input-hint {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Autocomplete dropdown styling */
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.autocomplete-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.autocomplete-item:hover, .autocomplete-item.selected {
+    background-color: #f8f9fa;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.form-row { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+}
+
+.btn { 
+    padding: 12px 24px; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    transition: all 0.3s ease; 
+    text-decoration: none; 
+    display: inline-block; 
+    text-align: center; 
+    font-size: 0.95em;
+}
+
+.btn-primary { 
+    background: linear-gradient(135deg, #3498db, #2980b9); 
+    color: white; 
+}
+
+.btn-primary:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); 
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #27ae60, #219a52);
+    color: white;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-large { 
+    font-size: 1.2em; 
+    padding: 15px 30px; 
+}
+
+/* Enhanced Weather Section */
+.weather-section {
+    background: linear-gradient(135deg, #74b9ff, #0984e3);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
+}
+
+.weather-section h4 {
+    margin: 0 0 15px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.weather-display {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.weather-display h5 {
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.weather-display p {
+    margin: 5px 0;
+    font-size: 0.95em;
+}
+
+.weather-loading {
+    text-align: center;
+    padding: 15px;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.weather-days {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.weather-day {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 120px;
+    flex: 1;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.weather-day:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.weather-day.positive {
+    border-left: 4px solid #00b894;
+}
+
+.weather-day.warning {
+    border-left: 4px solid #fdcb6e;
+}
+
+.weather-day.negative {
+    border-left: 4px solid #e17055;
+}
+
+.weather-day.quality-risk {
+    border: 2px solid #e74c3c;
+    background: rgba(231, 76, 60, 0.2);
+}
+
+.weather-day div {
+    margin: 3px 0;
+    font-size: 0.9em;
+}
+
+.weather-day strong {
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.quality-warning {
+    background: rgba(231, 76, 60, 0.15);
+    border: 1px solid #e74c3c;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    color: #c0392b;
+    font-weight: 600;
+}
+
+/* Enhanced Prediction Section */
+.prediction-section {
+    background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(162, 155, 254, 0.3);
+}
+
+.prediction-section h4 {
+    margin: 0 0 20px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.business-model-selection {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.radio-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.radio-group label {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.radio-group label:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 8px;
+}
+
+.financial-params {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.param-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.param-row label {
+    flex: 1;
+    font-size: 0.95em;
+}
+
+.param-row input, .param-row select {
+    width: 150px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+}
+
+.prediction-results {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.prediction-loading {
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+/* Message styles */
+.message { 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 15px 0; 
+    position: fixed; 
+    top: 20px; 
+    right: 20px; 
+    z-index: 1001; 
+    min-width: 300px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+    cursor: pointer; 
+    transition: all 0.3s ease;
+}
+
+.message.success { 
+    background: #d4edda; 
+    color: #155724; 
+    border: 1px solid #c3e6cb; 
+}
+
+.message.error { 
+    background: #f8d7da; 
+    color: #721c24; 
+    border: 1px solid #f5c6cb; 
+}
+
+.message.info { 
+    background: #d1ecf1; 
+    color: #0c5460; 
+    border: 1px solid #bee5eb; 
+}
+
+.message.warning { 
+    background: #fff3cd; 
+    color: #856404; 
+    border: 1px solid #ffeaa7; 
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) { 
+    .header { 
+        flex-direction: column; 
+        gap: 15px; 
+        text-align: center; 
+    } 
+    .nav-tabs { 
+        padding: 0 15px; 
+    } 
+    .content-area { 
+        padding: 20px; 
+    } 
+    .form-row { 
+        grid-template-columns: 1fr; 
+    }
+    .radio-group {
+        flex-direction: column;
+    }
+    .weather-days {
+        flex-direction: column;
+    }
+    .param-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+    .param-row input,
+    .param-row select {
+        width: 100%;
+    }
+}
