@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Donuland Management System v3.0</title>
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Přidejte tento script tag do <head> sekce vašeho index.html -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTTA_MKa6FrxKpkcd7c5-d3FnC6FBLVTc&libraries=places&callback=initGoogleMaps&loading=async" defer></script>
+
+<script>
+// Callback funkce pro Google Maps API
+function initGoogleMaps() {
+    console.log('✅ Google Maps API načteno');
+    // AutocompleteManager se inicializuje automaticky po načtení DOM
+}
+
+// Fallback pokud Google Maps API selže
+window.setTimeout(() => {
+    if (!window.google) {
+        console.warn('⚠️ Google Maps API se nepodařilo načíst - používám fallback');
+    }
+}, 5000);
+</script>
 </head>
 <body>
     <div class="container">
