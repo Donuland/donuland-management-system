@@ -1,242 +1,416 @@
-// =============================================================================
-// WEATHER MODULE
-// =============================================================================
+// weather.js - Pokročilý weather systém s reálnými dny
+class WeatherManager {
+    constructor() {
+        this.apiKey = '';
+        this.cache = new Map();
+        this.cacheTimeout = 10 * 60 * 1000; // 10 minut cache
+    }
 
-const weather = {
-    async loadWeather() {
-        const location = document.getElementById('eventLocation').value.trim();
-        const date = document.getElementById('eventDate').value;
-        const duration = parseInt(document.getElementById('eventDuration').value);
-        const environment = document.getElementById('eventEnvironment').value;
+    // Nastavení API klíče
+    setApiKey(apiKey) {
+        this.apiKey = apiKey;
+        console.log('🔑 Weather API klíč nastaven');
+    }
+
+    // Hlavní funkce pro aktualizaci předpovědi počasí
+    async updateWeatherForecast() {
+        const locationInput = document.getElementById('location');
+        const startDateInput = document.getElementById('eventStartDate');
+        const endDateInput = document.getElementById('eventEndDate');
+        const forecastDiv = document.getElementById('weatherForecast');
         
-        if (!location || !date) {
-            document.getElementById('weatherDisplay').innerHTML = 
-                '<div class="weather-loading">📍 Vyberte město a datum pro načtení počasí</div>';
+        if (!locationInput || !startDateInput || !forecastDiv) {
+            console.warn('⚠️ Weather forecast elementy nenalezeny');
             return;
         }
 
-        const weatherDisplay = document.getElementById('weatherDisplay');
-        const weatherDays = document.getElementById('weatherDays');
-        const qualityWarning = document.getElementById('qualityWarning');
+        const location = locationInput.value.trim();
+        const startDate = startDateInput.value;
+        const endDate = endDateInput?.value || startDate;
         
-        ui.showLoading('weatherDisplay', 'Načítám předpověď počasí...');
-        weatherDays.innerHTML = '';
-        qualityWarning.style.display = 'none';
-
+        if (!location || !startDate) {
+            forecastDiv.innerHTML = '<p>📍 Vyberte město a datum pro načtení počasí</p>';
+            return;
+        }
+        
+        forecastDiv.innerHTML = '<p>🔄 Načítám předpověď počasí...</p>';
+        
         try {
-            // Get coordinates for the location
-            const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)},CZ&limit=1&appid=${CONFIG.WEATHER_API_KEY}`;
-            const geoResponse = await fetch(geoUrl);
-            const geoData = await geoResponse.json();
+            const eventDays = this.calculateEventDuration(startDate, endDate);
+            const weatherForecasts = await this.getWeatherForDays(location, startDate, Math.min(eventDays, 5));
             
-            if (!geoData || geoData.length === 0) {
-                throw new Error('Město nenalezeno');
+            if (weatherForecasts.length > 0) {
+                this.displayWeatherForecast(weatherForecasts, forecastDiv);
+                console.log('✅ Počasí úspěšně načteno pro', weatherForecasts.length, 'dní');
+            } else {
+                forecastDiv.innerHTML = '<p class="error">❌ Nepodařilo se načíst předpověď počasí</p>';
             }
-
-            const lat = geoData[0].lat;
-            const lon = geoData[0].lon;
-
-            // Get weather forecast
-            const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${CONFIG.WEATHER_API_KEY}&units=metric&lang=cs`;
-            const weatherResponse = await fetch(weatherUrl);
-            
-            if (!weatherResponse.ok) {
-                throw new Error(`Weather API error: ${weatherResponse.status}`);
-            }
-            
-            const weatherData = await weatherResponse.json();
-
-            // Process weather data
-            const eventDate = new Date(date);
-            const weatherSummary = this.processWeatherData(weatherData, eventDate, duration, environment);
-            
-            // Display results
-            this.displayWeatherResults(weatherSummary, location, duration, environment);
-            
-            // Store weather data for prediction
-            GLOBAL_STATE.currentWeatherData = weatherSummary;
-            
-            // Update prediction
-            if (typeof prediction !== 'undefined') {
-                prediction.updatePrediction();
-            }
-
         } catch (error) {
-            console.error('Weather error:', error);
-            weatherDisplay.innerHTML = `
-                <div style="color: #e74c3c;">
-                    ⚠️ Nepodařilo se načíst počasí pro ${location}
-                    <br><small>${error.message}</small>
-                </div>
-            `;
-            GLOBAL_STATE.currentWeatherData = null;
-        }
-    },
-
-    processWeatherData(weatherData, eventDate, duration, environment) {
-        let totalTemp = 0;
-        let totalRain = 0;
-        let maxTemp = -Infinity;
-        let minTemp = Infinity;
-        let weatherSummary = {
-            avgTemp: 0,
-            maxTemp: 0,
-            minTemp: 0,
-            totalRain: 0,
-            weatherConditions: [],
-            dayDetails: [],
-            qualityRisk: false,
-            environmentImpact: 1.0
-        };
-
-        for (let day = 0; day < duration; day++) {
-            const currentDate = new Date(eventDate);
-            currentDate.setDate(eventDate.getDate() + day);
-            
-            // Filter weather data for this day
-            const dayData = weatherData.list.filter(item => {
-                const itemDate = new Date(item.dt * 1000);
-                return itemDate.toDateString() === currentDate.toDateString();
-            });
-
-            if (dayData.length > 0) {
-                const dayTemp = dayData.reduce((sum, item) => sum + item.main.temp, 0) / dayData.length;
-                const dayMaxTemp = Math.max(...dayData.map(item => item.main.temp_max));
-                const dayMinTemp = Math.min(...dayData.map(item => item.main.temp_min));
-                const dayRain = dayData.reduce((sum, item) => sum + (item.rain?.['3h'] || 0), 0);
-                const dayWeather = dayData[Math.floor(dayData.length / 2)].weather[0];
-
-                totalTemp += dayTemp;
-                totalRain += dayRain;
-                maxTemp = Math.max(maxTemp, dayMaxTemp);
-                minTemp = Math.min(minTemp, dayMinTemp);
-                
-                // Check for quality risk
-                const hasQualityRisk = dayMaxTemp > CONFIG.WEATHER.TEMP_THRESHOLD && environment !== 'indoor';
-                if (hasQualityRisk) {
-                    weatherSummary.qualityRisk = true;
-                }
-
-                weatherSummary.weatherConditions.push(dayWeather.description);
-                weatherSummary.dayDetails.push({
-                    day: day + 1,
-                    date: currentDate,
-                    temp: Math.round(dayTemp),
-                    maxTemp: Math.round(dayMaxTemp),
-                    minTemp: Math.round(dayMinTemp),
-                    rain: Math.round(dayRain * 10) / 10,
-                    description: dayWeather.description,
-                    icon: dayWeather.icon,
-                    qualityRisk: hasQualityRisk
-                });
-            }
-        }
-
-        weatherSummary.avgTemp = Math.round(totalTemp / duration);
-        weatherSummary.maxTemp = Math.round(maxTemp);
-        weatherSummary.minTemp = Math.round(minTemp);
-        weatherSummary.totalRain = Math.round(totalRain * 10) / 10;
-
-        // Calculate environment impact
-        weatherSummary.environmentImpact = this.calculateEnvironmentImpact(weatherSummary, environment);
-
-        return weatherSummary;
-    },
-
-    calculateEnvironmentImpact(weatherSummary, environment) {
-        let impact = 1.0;
-        
-        if (environment === 'indoor') {
-            return Math.max(0.9, Math.min(1.1, 1.0 + (weatherSummary.totalRain > 10 ? 0.1 : 0)));
-        }
-        
-        // Temperature impact
-        if (weatherSummary.avgTemp < 10) {
-            impact *= 0.8;
-        } else if (weatherSummary.avgTemp > 30) {
-            impact *= 0.85;
-        } else if (weatherSummary.avgTemp >= 18 && weatherSummary.avgTemp <= 25) {
-            impact *= 1.1;
-        }
-        
-        // Rain impact
-        if (weatherSummary.totalRain > 15) {
-            impact *= 0.6;
-        } else if (weatherSummary.totalRain > 5) {
-            impact *= 0.8;
-        } else if (weatherSummary.totalRain < 2) {
-            impact *= 1.05;
-        }
-        
-        // Quality risk impact
-        if (weatherSummary.qualityRisk) {
-            impact *= 0.9;
-        }
-        
-        return Math.max(0.5, Math.min(1.3, impact));
-    },
-
-    displayWeatherResults(weatherSummary, location, duration, environment) {
-        const weatherDisplay = document.getElementById('weatherDisplay');
-        const weatherDays = document.getElementById('weatherDays');
-        const qualityWarning = document.getElementById('qualityWarning');
-        
-        // Main weather summary
-        const impactText = this.getWeatherImpactText(weatherSummary.environmentImpact);
-        
-        weatherDisplay.innerHTML = `
-            <h5>📍 ${location} - Předpověď na ${duration} ${duration === 1 ? 'den' : duration < 5 ? 'dny' : 'dní'}</h5>
-            <p><strong>Teploty:</strong> ${weatherSummary.minTemp}°C - ${weatherSummary.maxTemp}°C (ø ${weatherSummary.avgTemp}°C)</p>
-            <p><strong>Celkové srážky:</strong> ${weatherSummary.totalRain} mm</p>
-            <p><strong>Dopad na prodej:</strong> <span style="color: ${impactText.color}">${impactText.text}</span></p>
-            ${environment === 'indoor' ? '<p style="opacity: 0.8;"><em>Vnitřní akce - snížený vliv počasí</em></p>' : ''}
-        `;
-        
-        // Daily weather breakdown
-        let weatherDaysHtml = '';
-        weatherSummary.dayDetails.forEach(day => {
-            let impactClass = 'positive';
-            if (day.rain > 8 || day.maxTemp < 12 || day.qualityRisk) {
-                impactClass = 'negative';
-            } else if (day.rain > 3 || day.maxTemp < 16 || day.maxTemp > 28) {
-                impactClass = 'warning';
-            }
-            
-            if (day.qualityRisk) {
-                impactClass += ' quality-risk';
-            }
-
-            weatherDaysHtml += `
-                <div class="weather-day ${impactClass}">
-                    <strong>Den ${day.day}</strong>
-                    <div>${day.date.toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric' })}</div>
-                    <div>🌡️ ${day.minTemp}° - ${day.maxTemp}°C</div>
-                    <div>💧 ${day.rain} mm</div>
-                    <div style="font-size: 0.85em; margin-top: 5px;">${day.description}</div>
-                    ${day.qualityRisk ? '<div style="font-size: 0.8em; color: #e74c3c; font-weight: bold;">⚠️ Riziko roztékání</div>' : ''}
-                </div>
-            `;
-        });
-        
-        weatherDays.innerHTML = weatherDaysHtml;
-        
-        // Quality warning
-        if (weatherSummary.qualityRisk && environment !== 'indoor') {
-            qualityWarning.style.display = 'block';
-        }
-    },
-
-    getWeatherImpactText(impact) {
-        if (impact > 1.15) {
-            return { text: '☀️ Vynikající podmínky (+15% až +30%)', color: '#00b894' };
-        } else if (impact > 1.05) {
-            return { text: '🌤️ Dobré podmínky (+5% až +15%)', color: '#00b894' };
-        } else if (impact > 0.95) {
-            return { text: '⛅ Neutrální podmínky', color: '#74b9ff' };
-        } else if (impact > 0.8) {
-            return { text: '🌧️ Méně příznivé (-5% až -20%)', color: '#fdcb6e' };
-        } else {
-            return { text: '⛈️ Nepříznivé podmínky (-20% až -40%)', color: '#e17055' };
+            console.error('❌ Chyba při načítání počasí:', error);
+            forecastDiv.innerHTML = `<p class="error">❌ Chyba při načítání počasí: ${error.message}</p>`;
         }
     }
-};
+
+    // Získání počasí pro více dní
+    async getWeatherForDays(location, startDate, dayCount) {
+        const forecasts = [];
+        
+        for (let day = 0; day < dayCount; day++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(currentDate.getDate() + day);
+            
+            try {
+                const weather = await this.getWeatherForDate(location, currentDate);
+                if (weather) {
+                    forecasts.push({
+                        date: new Date(currentDate),
+                        weather: weather,
+                        dayName: currentDate.toLocaleDateString('cs-CZ', { weekday: 'long' }),
+                        dayDate: currentDate.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' }),
+                        dayIndex: day
+                    });
+                }
+            } catch (error) {
+                console.warn(`⚠️ Nepodařilo se načíst počasí pro den ${day + 1}:`, error);
+            }
+        }
+        
+        return forecasts;
+    }
+
+    // Získání počasí pro konkrétní datum
+    async getWeatherForDate(location, date) {
+        if (!this.apiKey) {
+            throw new Error('Weather API klíč není nastaven');
+        }
+
+        const cacheKey = `${location}-${date.toISOString().split('T')[0]}`;
+        
+        // Kontrola cache
+        if (this.cache.has(cacheKey)) {
+            const cached = this.cache.get(cacheKey);
+            if (Date.now() - cached.timestamp < this.cacheTimeout) {
+                return cached.data;
+            }
+        }
+
+        try {
+            // Získání souřadnic
+            const coordinates = await this.getCoordinates(location);
+            if (!coordinates) {
+                throw new Error(`Místo "${location}" nebylo nalezeno`);
+            }
+
+            const { lat, lon } = coordinates;
+            
+            // Výpočet rozdílu dnů
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const targetDate = new Date(date);
+            targetDate.setHours(0, 0, 0, 0);
+            const daysDiff = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+
+            let weatherData;
+            
+            if (daysDiff <= 0) {
+                // Aktuální počasí
+                weatherData = await this.getCurrentWeather(lat, lon);
+            } else if (daysDiff <= 5) {
+                // 5denní předpověď
+                weatherData = await this.getForecastWeather(lat, lon, targetDate);
+            } else {
+                // Pro vzdálenější data - použijeme aktuální jako odhad
+                weatherData = await this.getCurrentWeather(lat, lon);
+                weatherData.description += ' (odhad)';
+            }
+            
+            // Uložení do cache
+            this.cache.set(cacheKey, {
+                data: weatherData,
+                timestamp: Date.now()
+            });
+            
+            return weatherData;
+            
+        } catch (error) {
+            console.error('Chyba při získávání počasí:', error);
+            throw error;
+        }
+    }
+
+    // Získání souřadnic místa
+    async getCoordinates(location) {
+        const cacheKey = `coords-${location}`;
+        if (this.cache.has(cacheKey)) {
+            const cached = this.cache.get(cacheKey);
+            if (Date.now() - cached.timestamp < this.cacheTimeout * 6) { // Delší cache pro souřadnice
+                return cached.data;
+            }
+        }
+
+        try {
+            const response = await fetch(
+                `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${this.apiKey}`
+            );
+            
+            if (!response.ok) {
+                throw new Error(`Geocoding API error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.length === 0) {
+                return null;
+            }
+
+            const coords = { lat: data[0].lat, lon: data[0].lon };
+            
+            // Cache souřadnice
+            this.cache.set(cacheKey, {
+                data: coords,
+                timestamp: Date.now()
+            });
+            
+            return coords;
+        } catch (error) {
+            console.error('Chyba při získávání souřadnic:', error);
+            throw error;
+        }
+    }
+
+    // Aktuální počasí
+    async getCurrentWeather(lat, lon) {
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=metric&lang=cs`
+        );
+        
+        if (!response.ok) {
+            throw new Error(`Weather API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        return {
+            main: data.weather[0].main,
+            description: data.weather[0].description,
+            temp: data.main.temp,
+            humidity: data.main.humidity,
+            windSpeed: data.wind?.speed || 0,
+            pressure: data.main.pressure
+        };
+    }
+
+    // Předpověď počasí
+    async getForecastWeather(lat, lon, targetDate) {
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=metric&lang=cs`
+        );
+        
+        if (!response.ok) {
+            throw new Error(`Forecast API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Najdeme nejbližší předpověď k cílovému dni
+        const targetTime = targetDate.getTime();
+        let closestForecast = data.list[0];
+        let minDiff = Math.abs(new Date(closestForecast.dt * 1000) - targetTime);
+        
+        for (const forecast of data.list) {
+            const forecastTime = new Date(forecast.dt * 1000);
+            const diff = Math.abs(forecastTime - targetTime);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestForecast = forecast;
+            }
+        }
+        
+        return {
+            main: closestForecast.weather[0].main,
+            description: closestForecast.weather[0].description,
+            temp: closestForecast.main.temp,
+            humidity: closestForecast.main.humidity,
+            windSpeed: closestForecast.wind?.speed || 0,
+            pressure: closestForecast.main.pressure
+        };
+    }
+
+    // Zobrazení předpovědi počasí
+    displayWeatherForecast(forecasts, container) {
+        const weatherHtml = forecasts.map((forecast, index) => {
+            const warnings = this.getWeatherWarnings(forecast.weather);
+            const warningClass = warnings.length > 0 ? 'warning' : '';
+            
+            return `
+                <div class="weather-day ${warningClass}" style="display: inline-block; margin: 10px; padding: 15px; background: ${this.getWeatherColor(forecast.weather.main)}; border-radius: 10px; text-align: center; min-width: 140px; color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                    <div style="font-size: 2.5em; margin-bottom: 5px;">${this.getWeatherIcon(forecast.weather.main)}</div>
+                    <div style="font-weight: bold; font-size: 1.1em;">${forecast.dayName}</div>
+                    <div style="font-size: 0.9em; margin-bottom: 8px; opacity: 0.9;">${forecast.dayDate}</div>
+                    <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 5px;">${Math.round(forecast.weather.temp)}°C</div>
+                    <div style="font-size: 0.8em; margin-bottom: 5px;">${forecast.weather.description}</div>
+                    <div style="font-size: 0.7em; opacity: 0.8;">
+                        💨 ${Math.round(forecast.weather.windSpeed)} m/s<br>
+                        💧 ${forecast.weather.humidity}%
+                    </div>
+                    ${warnings.length > 0 ? `<div style="margin-top: 8px; font-size: 0.7em; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 4px;">⚠️ ${warnings[0]}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        // Souhrnná varování
+        const allWarnings = this.getAllWarnings(forecasts);
+        const warningsHtml = allWarnings.length > 0 ? `
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; color: #856404;">
+                <strong>⚠️ Varování pro akci:</strong><br>
+                ${allWarnings.map(w => `• ${w}`).join('<br>')}
+            </div>
+        ` : '';
+        
+        container.innerHTML = `
+            <div style="text-align: center;">
+                <h4 style="margin: 0 0 15px 0; color: #ff6b6b;">📅 Předpověď počasí</h4>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+                    ${weatherHtml}
+                </div>
+                ${warningsHtml}
+            </div>
+        `;
+    }
+
+    // Varování pro jednotlivé dny
+    getWeatherWarnings(weather) {
+        const warnings = [];
+        
+        if (weather.temp > 25) {
+            warnings.push('Vysoké teploty - čokoláda se tají');
+        }
+        if (weather.temp < 5) {
+            warnings.push('Nízké teploty - málo lidí');
+        }
+        if (weather.main === 'Rain' || weather.main === 'Drizzle') {
+            warnings.push('Déšť - snížení návštěvnosti');
+        }
+        if (weather.windSpeed > 10) {
+            warnings.push('Silný vítr - problémy se stánkem');
+        }
+        
+        return warnings;
+    }
+
+    // Souhrnná varování pro celou akci
+    getAllWarnings(forecasts) {
+        const warnings = [];
+        const temps = forecasts.map(f => f.weather.temp);
+        const conditions = forecasts.map(f => f.weather.main);
+        const winds = forecasts.map(f => f.weather.windSpeed);
+        
+        const maxTemp = Math.max(...temps);
+        const minTemp = Math.min(...temps);
+        const maxWind = Math.max(...winds);
+        const rainDays = conditions.filter(c => c === 'Rain' || c === 'Drizzle').length;
+        
+        if (maxTemp > 25) {
+            warnings.push(`Vysoké teploty až ${Math.round(maxTemp)}°C - připravte chladící zařízení`);
+        }
+        if (minTemp < 5) {
+            warnings.push(`Nízké teploty až ${Math.round(minTemp)}°C - očekávejte nižší návštěvnost`);
+        }
+        if (rainDays > 0) {
+            warnings.push(`Déšť ${rainDays} ${rainDays === 1 ? 'den' : 'dny'} - připravte krytí a snižte objednávku o 30-50%`);
+        }
+        if (maxWind > 10) {
+            warnings.push(`Silný vítr až ${Math.round(maxWind)} m/s - zajistěte pevné kotvení stánku`);
+        }
+        
+        return warnings;
+    }
+
+    // Ikony počasí
+    getWeatherIcon(weatherMain) {
+        const icons = {
+            'Clear': '☀️',
+            'Clouds': '☁️',
+            'Rain': '🌧️',
+            'Snow': '❄️',
+            'Thunderstorm': '⛈️',
+            'Drizzle': '🌦️',
+            'Mist': '🌫️',
+            'Fog': '🌫️',
+            'Haze': '🌫️'
+        };
+        return icons[weatherMain] || '🌤️';
+    }
+
+    // Barvy pozadí podle počasí
+    getWeatherColor(weatherMain) {
+        const colors = {
+            'Clear': '#f39c12',      // oranžová
+            'Clouds': '#7f8c8d',     // šedá
+            'Rain': '#3498db',       // modrá
+            'Snow': '#bdc3c7',       // světle šedá
+            'Thunderstorm': '#9b59b6', // fialová
+            'Drizzle': '#5dade2',    // světle modrá
+            'Mist': '#95a5a6',       // šedá
+            'Fog': '#95a5a6',        // šedá
+            'Haze': '#95a5a6'        // šedá
+        };
+        return colors[weatherMain] || '#34495e';
+    }
+
+    // Výpočet délky akce
+    calculateEventDuration(startDate, endDate) {
+        if (!endDate || endDate === startDate) return 1;
+        
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        return diffDays;
+    }
+
+    // Test API připojení
+    async testConnection() {
+        if (!this.apiKey) {
+            return { success: false, message: 'API klíč není nastaven' };
+        }
+
+        try {
+            const response = await fetch(
+                `https://api.openweathermap.org/data/2.5/weather?q=Prague&appid=${this.apiKey}&units=metric`
+            );
+            
+            if (response.ok) {
+                const data = await response.json();
+                return { 
+                    success: true, 
+                    message: `OK (Praha: ${Math.round(data.main.temp)}°C)` 
+                };
+            } else {
+                return { 
+                    success: false, 
+                    message: `API chyba: ${response.status}` 
+                };
+            }
+        } catch (error) {
+            return { 
+                success: false, 
+                message: `Chyba připojení: ${error.message}` 
+            };
+        }
+    }
+
+    // Vyčištění cache
+    clearCache() {
+        this.cache.clear();
+        console.log('🗑️ Weather cache vyčištěna');
+    }
+}
+
+// Export pro použití v jiných souborech
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = WeatherManager;
+}
+
+// Globální instance
+window.weatherManager = new WeatherManager();
