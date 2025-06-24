@@ -381,5 +381,13 @@
     </div>
 <link rel="stylesheet" href="css/styles.css">
     <script src="script.js"></script>
+    <script>
+console.log('Test script loaded');
+setTimeout(() => {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    console.log('App should be visible now');
+}, 3000);
+</script>
 </body>
 </html>
